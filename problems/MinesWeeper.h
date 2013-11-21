@@ -79,7 +79,7 @@ void PrintMineInformation(char** p , int row, int column, int seq)
 }
 
 
-void Run()
+int main(int argc, char* argv[])
 {
 	int m,n;
 	int seq = 1;
@@ -99,4 +99,6 @@ void Run()
 		PrintMineInformation(p, n,m, seq++);
 		Delete2DimensionArray(p,n);
 	}
+
+	return 0;
 }

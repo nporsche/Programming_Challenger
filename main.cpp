@@ -1,9 +1,4 @@
 // Programming_Challenger.cpp : Defines the entry point for the console application.
-#include "MinesWeeper.h"
+#include "LC_Display.h"
 
-int main(int argc, char* argv[])
-{
-	Run();
-	return 0;
-}
 

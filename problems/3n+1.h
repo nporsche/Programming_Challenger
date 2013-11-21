@@ -81,7 +81,7 @@ int Process(int x, int y)
 	return max;
 }
 
-void Run()
+int main(int argc, char* argv[])
 {
 	int x;
 	int y;
@@ -91,6 +91,8 @@ void Run()
 		cout << y << " ";
 		cout << Process(x, y) << endl;
 	}	
+
+	return 0;
 }
 
 
