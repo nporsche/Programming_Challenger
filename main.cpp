@@ -6,4 +6,5 @@
 //#include "hartals.h"
 //#include "crypt_kicker.h"
 //#include "stack_em_up.h"
-#include "Erdos_number.h"
+#include "contest_scoreboard.h"
+
