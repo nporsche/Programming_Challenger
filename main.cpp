@@ -6,5 +6,7 @@
 //#include "hartals.h"
 //#include "crypt_kicker.h"
 //#include "stack_em_up.h"
-#include "yahtzee.h"
+//#include "yahtzee.h"
+//#include "is_bigger_smarter.h"
+#include "distinct_sequence.h"
 
