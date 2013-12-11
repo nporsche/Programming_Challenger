@@ -8,5 +8,6 @@
 //#include "stack_em_up.h"
 //#include "yahtzee.h"
 //#include "is_bigger_smarter.h"
-#include "distinct_sequence.h"
+//#include "distinct_sequence.h"
+#include "weights_and_measure.h"
 
