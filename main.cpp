@@ -9,7 +9,7 @@
 //#include "yahtzee.h"
 //#include "is_bigger_smarter.h"
 //#include "distinct_sequence.h"
-//#include "weights_and_measure.h"
+#include "weights_and_measure.h"
 //#include "Bicoloring.h"
-#include "playing_the_wheels.h"
+//#include "playing_the_wheels.h"
 

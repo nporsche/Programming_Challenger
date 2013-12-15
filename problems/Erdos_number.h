@@ -1,3 +1,13 @@
+// Erdos Numbers （Erdos 数）  
+// PC/UVa IDs: 110206/10044, Popularity: B, Success rate: low Level: 2  
+// Verdict: Accepted  
+//   
+//  
+// 使用宽度优先搜索 （BFS） 来解决本问题。作者 Erdos，P. 的 Erdos 数是 0，扫描论文库，找到所  
+// 有 Erdos 数为 1 的作者，即与 Erdos，P. 合作发表过文章的作者，然后根据扫描得到的 Erdos 数  
+// 为 1 的作者结果，再次扫描数据库，得到 Erdos 数为 2 的作者，照此继续扫描，直到扫描一次后未发  
+// 现有作者进入结果集中，表明所有 Erdos 不为无穷大的作者已经找到。可用字典来提高查找的性能。
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -5,29 +15,10 @@
 #include <list>
 #include <queue>
 #include <algorithm>
+#include <sstream>
 
 using namespace std;
 const int INFINITE = 0xffff;
-
-struct node
-{
-	node(const string& n)
-	{
-		depth = INFINITE;
-		state = white;
-		name = n;
-	}
-	enum color
-	{
-		white,
-		gray,
-		black
-	};
-    
-	int depth;
-	string name;
-	color state;
-};
 
 void parse_name(const string& line, vector<string>& names )
 {
@@ -46,118 +37,104 @@ void parse_name(const string& line, vector<string>& names )
         names.push_back(line.substr(begin));
 }
 
-struct finder_list_node_by_name
+struct graphic
 {
-	finder_list_node_by_name(const string& n)
-    : name(n)
+	void add_edge(const string& s1, const string& s2, bool directed = false)
 	{
+		m_adj[s1].push_back(s2);
+		if(!directed)
+			add_edge(s2,s1,true);
 	}
-	bool operator()(const node* p)
+	void build_adj(vector<string>::iterator begin, vector<string>::iterator end)
 	{
-		return (p->name == name);
+		if(end - begin == 2)
+			add_edge(*begin, *(begin+1));
+		else if(end-begin > 2)
+		{
+			build_adj(begin+1, end);
+			for(vector<string>::iterator adj_node = begin+1; adj_node!=end;++adj_node)
+			{
+				add_edge(*begin, *adj_node);
+			}
+		}
 	}
-	string name;
+	map<string,list<string> > m_adj;
 };
 
-struct find_map_node_by_name
+struct node_state
 {
-	find_map_node_by_name(const string& n)
-    :name(n)
-	{}
-	bool operator()(const map<node*, list<node*> >::value_type& pair)
+	enum state
 	{
-		return (pair.first->name == name);
+		none,
+		discovered,
+		processed
+	};
+	node_state()
+	{
+		stat = none;
+		depth = INFINITE;
 	}
-    
-	string name;
+
+	state stat;
+	int depth;
 };
 
-
-void CreateGraphics(const vector<string>& papers, map<node*, list<node*> >& adj_list)
+void CreateGraphics(const vector<string>& papers, graphic& g)
 {
 	for(int i = 0; i < papers.size(); ++i)
 	{
 		vector<string> names;	//these names are adjacent
-		parse_name(papers[i],names);
-        for(int x = 0; x < names.size(); ++x)   //add nodes
-		{
-            map<node*, list<node*> >::iterator it = find_if(adj_list.begin(),adj_list.end(),find_map_node_by_name(names[x]));
-            if(it == adj_list.end())
-            {
-                adj_list[new node(names[x])];
-            }
-        }
-		//build adjacent list
-		for(int x = 0; x < names.size(); ++x)
-		{
-			map<node*, list<node*> >::iterator it = find_if(adj_list.begin(),adj_list.end(),find_map_node_by_name(names[x]));
-			node* first = it->first;
-            
-            map<node*, list<node*> >::iterator pair_it = adj_list.find(first);
-			for(int y = 0; y < names.size(); ++y)
-			{
-				if(x != y)
-				{
-					list<node*>::iterator it = find_if(pair_it->second.begin(), pair_it->second.end(),finder_list_node_by_name(names[y]));
-					if(it == pair_it->second.end())
-                    {
-                        node* p = find_if(adj_list.begin(),adj_list.end(),find_map_node_by_name(names[y]))->first;
-						pair_it->second.push_back(p);
-                    }
-				}
-			}
-		}
-        
+		parse_name(papers[i],names);     
+		g.build_adj(names.begin(), names.end());
 	}
 }
 
-void BreadthFirstSearch(map<node*, list<node*> > &adj_list, const string& root)
+void BreadthFirstSearch(const graphic& g, const string& root, map<string, node_state>& dic)
 {
-	map<node*, list<node*> >::iterator it = find_if(adj_list.begin(),adj_list.end(),find_map_node_by_name(root));
-	if(it == adj_list.end())
+	if(g.m_adj.find(root) == g.m_adj.end())
 		return;
-    
-	it->first->depth = 0;
-	it->first->state = node::gray;
-    
-	queue<node*> q;
-	q.push(it->first);
-	
+
+	dic[root].stat = node_state::discovered;
+	dic[root].depth = 0;
+
+	queue<string> q;
+	q.push(root);
 	while(!q.empty())
 	{
-		node* u = q.front();
+		string u = q.front();
 		q.pop();
-		list<node*>& adj = adj_list[u];
-		for(list<node*>::iterator it = adj.begin();
-            it!= adj.end();
-            ++it)
+
+		for(list<string>::const_iterator it = g.m_adj.at(u).begin();
+			it != g.m_adj.at(u).end();
+			++it)
 		{
-			node* v = *it;
-			if(v->state == node::white)
+			string v = *it;
+			if(dic[v].stat == node_state::none)
 			{
-				v->state = node::gray;
-				v->depth = u->depth + 1;
+				dic[v].stat = node_state::discovered;
+				dic[v].depth = dic[u].depth + 1;
 				q.push(v);
 			}
 		}
-        
-        u->state = node::black;
+		dic[u].stat = node_state::processed;
 	}
 }
 
 int main()
 {
-	int setcount;
-	cin >> setcount;
-	
+	string line;
+	getline(cin,line);
+	int setcount = atoi(line.c_str());
+
 	for(int s = 1 ; s<= setcount; ++s)
 	{
 		cout << "Scenario " << s << endl;
+		getline(cin,line);
+		istringstream iss(line);
 		int line_count;
 		int author_count;
-		cin >> line_count;
-		cin >> author_count;
-        cin.ignore();
+		iss >> line_count;
+		iss >> author_count;
 		vector<string> papers;
 		while(line_count--)
 		{
@@ -165,23 +142,29 @@ int main()
 			getline(cin, paper);
 			papers.push_back(paper.substr(0, paper.find_first_of(':')));
 		}
-		map<node*, list<node*> > adj_list;
-		CreateGraphics(papers, adj_list);
-		BreadthFirstSearch(adj_list, "Erdos, P.");
+		graphic g;
+		CreateGraphics(papers, g);
+		
+		map<string, node_state> dic;
+		BreadthFirstSearch(g, "Erdos, P.", dic);
 		while(author_count--)
 		{
 			string author;
 			getline(cin,author);
-			map<node*, list<node*> >::iterator it  = find_if(adj_list.begin(),adj_list.end(),find_map_node_by_name(author));
-			if(it != adj_list.end())
-            {
-                if(it->first->depth != INFINITE)
-                    cout << author << " " << it->first->depth << endl;
-                else
-                    cout << author << " " << "infinity" << endl;
-            }
+			cout << author << " "; 
+			map<string, node_state>::iterator it = dic.find(author);
+			if(it != dic.end())
+			{
+				int dep = it->second.depth;
+				if(dep == INFINITE)
+					cout << "infinity" << endl;
+				else
+					cout << dep <<endl;
+			}
+			else 
+				cout << "infinity" << endl;
 		}
 	}
+
+	return 0;
 }
-
-

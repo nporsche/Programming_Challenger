@@ -41,7 +41,7 @@
 #include <vector>
 #include <algorithm>
 using namespace std;
-#define MAX_HEIGHT 0x7fffffff	//means it's impossible to build this height
+#define MAX_HEIGHT 0xffff	//means it's impossible to build this height
 struct turtle
 {
 	turtle(int w = 0, int s = 0)
@@ -63,6 +63,9 @@ bool sort_by_strength(const turtle& t1, const turtle& t2)
 
 int max_layers_of_turtles(vector<turtle> ts)
 {
+	if(ts.empty())
+		return 0;
+
     ts.push_back(turtle());
     swap(ts[ts.size()-1], ts[0]);
     sort(ts.begin() + 1, ts.end(), sort_by_strength);
@@ -70,8 +73,8 @@ int max_layers_of_turtles(vector<turtle> ts)
     
 	//build a matrix of [0-ts.count][0-h]  h = ts.count
 	
-	int row_count = ts.size() + 1;
-	int col_count = ts.size() + 1;
+	int row_count = ts.size();
+	int col_count = ts.size();
     
 	vector<vector<int> > mem;	//mem[i][h] 前i个乌龟产生高度为h的塔所需要的最小重量
 	vector<int> t;
@@ -130,4 +133,5 @@ int main()
 	cout << max_layers_of_turtles(v) << endl;
 	return 0;
 }
+
 
