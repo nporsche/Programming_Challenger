@@ -12,5 +12,6 @@
 //#include "weights_and_measure.h"
 //#include "Bicoloring.h"
 //#include "playing_the_wheels.h"
-#include "how_many_fibs.h"
+//#include "how_many_fibs.h"
+#include "how_many_pieces_of_land.h"
 
