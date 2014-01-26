@@ -1,9 +1,13 @@
+//本题的关键是找到递推关系式
+//L(k,d) = [N(k,d)-1]!/N(k,d-1)^k/N(k,d-2)^k/.../N(k,0)^k
+
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <vector>
 #include <iomanip>  
 #include <stdint.h>
+#include <math.h>
 using namespace std;
 class big_integer
 {
@@ -106,8 +110,8 @@ public:
 
 	big_integer operator-(const big_integer& x)
 	{
-		if(*this < x)
-			throw exception("does not support");
+		// 		if(*this < x)
+		// 			throw exception("does not support");
 
 		big_integer result;
 		unsigned long borrow = 0;
@@ -157,6 +161,14 @@ public:
 		*this = *this * x;
 	}
 
+	void operator >>= (unsigned long i)
+	{
+		if(digits.empty() || *this == 0 || i == 0)
+			return;
+
+		digits.erase(digits.begin(), digits.begin() + 1);
+	}
+
 	void operator<<=(unsigned long i)
 	{
 		if(digits.empty() || *this == 0 || i == 0)
@@ -172,9 +184,6 @@ public:
 
 	big_integer operator/(const big_integer& x)
 	{
-		if(*this < x)
-			throw exception("does not support");
-
 		big_integer quotient(0);
 		big_integer partial_this(0);
 		for(int i = digits.size()-1; i >=0; --i)
@@ -192,10 +201,13 @@ public:
 				quotient <<= 1;
 			}
 		}
-		if(partial_this > 0)
-			throw exception("remaining is over than 0");
 
 		return quotient;
+	}
+
+	void operator/=(const big_integer& x)
+	{
+		*this = *this/x;
 	}
 
 	bool operator<(const big_integer& x) const
@@ -263,7 +275,7 @@ int64_t get_node_count(int k, int d)
 	if(k == 1)
 		return d + 1;
 
-	return (pow(k, d+1)-1)/(k-1);
+	return (pow(k,d+1)-1)/(k-1);
 }
 
 #define MAX_D 21
@@ -274,28 +286,11 @@ struct slot
 	slot()
 	{
 		lable_count = 0;
-		node_count = 0;
 	}
 	big_integer lable_count;
-	int64_t node_count;
 };
 slot s[MAX_K+1][MAX_D+1];
 
-//假设node_count(k,d) 为深度为d,叉数为k的节点数量，则：
-//node_count(k,0) = 1, 深度为0的任意叉数的节点数量为0
-//node_count(k,d) = k * node(k,d-1) + 1; 递推关系式
-//
-//我们需要找到get_labling_count的递归关系式
-//get_lable_count(k,d)总共有node_count(k,d)个数，第一个
-//数必须要放在根节点，还剩下node_count(k,d)-1个数，这些数
-//要分成k组 , P = node_count(k,d-1)分法有：
-//X = C(P*k, P) * C(P*(k-1), P)*...*C(P*1, P) = (kP)!/(P!)^k
-//
-//每组内部的排列是get_labling_count(k,d-1) 
-//所有一共的排列是get_labling_count(k,d-1)^k * X 
-
-
-//L(k,d) = [N(k,d)-1]!/N(k,d-1)^k/N(k,d-2)^k/.../N(k,0)^k
 void process_labling_count(const vector<int>& input)//k,d
 {
 	int64_t max = 0;
@@ -304,9 +299,9 @@ void process_labling_count(const vector<int>& input)//k,d
 		int k = input[i];
 		int d = input[i+1];
 
-		s[k][d].node_count = get_node_count(k,d);
-		if(max < s[k][d].node_count)
-			max = s[k][d].node_count;
+		int64_t tmp = get_node_count(k,d);
+		if(max < tmp)
+			max = tmp;
 	}
 
 	vector<big_integer> factorial_table(max); //[0,max-1]
@@ -320,82 +315,40 @@ void process_labling_count(const vector<int>& input)//k,d
 	{
 		int k = input[i];
 		int d = input[i+1];
+
+		if(s[k][d].lable_count == 0)
+		{
+			big_integer result = factorial_table[get_node_count(k,d)-1];
+			big_integer divide(1);
+			for (int i = 1; i <= d;++i)
+			{
+				big_integer tmp = get_node_count(k,d-1);
+				tmp.power(k);
+				divide *= tmp;
+			}
+			s[k][d].lable_count = result/divide;
+		}
+
+		cout << s[k][d].lable_count << endl;
 	}
-
-// 	for(unsigned long k = 1; k < MAX_K + 1; ++k)
-// 	{
-// 		for(unsigned long d = 1; d < MAX_D + 1; ++d)
-// 		{
-// 			if(k*d <=21)
-// 			{
-// 				int64_t p = s[k][d-1].node_count;
-// 				big_integer x = factorial_table[p*k]/factorial_table[p].power(k);
-// 				s[k][d].lable_count = s[k][d-1].lable_count.power(k) * x;
-// 			}
-// 		}
-// 	}
 }
-
-
-// void initialize_matrix()
-// {
-// 	for(int k = 0; k < MAX_K + 1; ++k)
-// 	{
-// 		s[k][0].lable_count = 1;
-// 		s[k][0].node_count = 1;
-// 	}
-// 
-// 	for(int d = 0; d < MAX_D + 1; ++d)
-// 	{
-// 		s[0][d].lable_count = 1;
-// 		s[0][d].node_count = 1;
-// 	}
-// 
-// 	int64_t max = 0;
-// 	for(unsigned long k = 1; k < MAX_K + 1; ++k)
-// 	{
-// 		for(unsigned long d = 1; d < MAX_D + 1; ++d)
-// 		{
-// 			if(k*d <=21)
-// 			{
-// 				s[k][d].node_count = get_node_count(k,d);
-// 				if(max < s[k][d].node_count)
-// 					max = s[k][d].node_count;
-// 			}
-// 		}
-// 	}
-// 
-// 	
-// }
 
 int main()
 {
-  	//initialize_matrix();
-  
-  	string line;
+	//initialize_matrix();
+
+	string line;
 	vector<int> input;
-  	while(getline(cin,line))
-  	{
-  		istringstream iss(line);
-  		int k,d;
-  		iss >> k >> d;
+	while(getline(cin,line))
+	{
+		istringstream iss(line);
+		int k,d;
+		iss >> k >> d;
 		input.push_back(k);
 		input.push_back(d);
-  	}
+	}
 
 	process_labling_count(input);
-
-// 	big_integer a = 1024 * 1024;
-// 	big_integer b = 64;
- 	big_integer c = 20;
-// 	cout << "a + b = " << a+b << endl;
-// 	cout << "a - b = " << a-b << endl;
-// 	cout << "a * b = " << a*b << endl;
-// 	cout << "a / b = " << a/b << endl;
-// 	cout << "c factorial is" << c.factorial() << endl;
-// 	cout << "c power 3 is" << c.power(3) << endl;
-// 
-// 	cout << setw(2) << 15 << setfill('0');
 	return 0;
 }
 
